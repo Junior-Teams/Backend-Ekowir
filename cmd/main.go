@@ -38,6 +38,7 @@ func setupRoutes() *gin.Engine {
 		secured := api.Group("/secured").Use(middlewares.Auth())
 		{
 			secured.GET("/ping", handlers.Ping)
+			secured.GET("/me", handlers.GetMe)
 			secured.POST("/apk", handlers.Apk)
 			secured.GET("/users", handlers.GetUsers)
 			secured.GET("/users/:id", handlers.GetUserByID)

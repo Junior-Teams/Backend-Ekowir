@@ -11,6 +11,7 @@ type User struct {
 	Username string  `json:"username" gorm:"unique"`
 	Email    string  `json:"email" gorm:"unique"`
 	Password string  `json:"-"`
+  Picture  string `json:"picture"`
 	Xp       int     `json:"xp"`
 	GoogleID *string `json:"-" gorm:"uniqueIndex"`
 }

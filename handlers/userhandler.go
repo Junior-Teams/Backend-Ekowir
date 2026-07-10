@@ -40,6 +40,23 @@ func RegisterUser(context *gin.Context) {
 	context.JSON(http.StatusCreated, gin.H{"userId": user.ID, "email": user.Email, "username": user.Username})
 }
 
+func GetMe(context *gin.Context) {
+	email := context.GetString("email")
+	var user models.User
+	if err := database.DB.Db.Where("email = ?", email).First(&user).Error; err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		context.Abort()
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"id":       user.ID,
+		"name":     user.Name,
+		"username": user.Username,
+		"email":    user.Email,
+		"picture":  user.Picture,
+	})
+}
+
 func GetUsers(context *gin.Context) {
 	var users []models.User
 	if err := database.DB.Db.Find(&users).Error; err != nil {
