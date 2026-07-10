@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/ALZEE23/ApiGo/auth"
 	"github.com/ALZEE23/ApiGo/database"
@@ -42,4 +43,28 @@ func GenerateToken(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"token": tokenString})
+}
+
+func Logout(context *gin.Context) {
+	jti := context.GetString("jti")
+	expiresAt, _ := context.Get("exp")
+
+	exp, ok := expiresAt.(time.Time)
+	if jti == "" || !ok {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "no active session to revoke"})
+		context.Abort()
+		return
+	}
+
+	revoked := models.RevokedToken{
+		JTI:       jti,
+		ExpiresAt: exp,
+	}
+	if err := database.DB.Db.Create(&revoked).Error; err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		context.Abort()
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
