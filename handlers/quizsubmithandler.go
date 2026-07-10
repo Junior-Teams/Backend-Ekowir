@@ -62,7 +62,14 @@ func SubmitQuiz(context *gin.Context) {
 		}
 	}
 
-	passed := score >= quiz.PassingScore
+	// PassingScore is a percentage (0-100) of questions answered correctly,
+	// not a raw point/count threshold - comparing the raw count directly would
+	// make any quiz with fewer questions than PassingScore impossible to pass.
+	percentScore := 0
+	if len(questions) > 0 {
+		percentScore = score * 100 / len(questions)
+	}
+	passed := percentScore >= quiz.PassingScore
 	response := gin.H{
 		"score":           score,
 		"total_questions": len(questions),

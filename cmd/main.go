@@ -57,6 +57,8 @@ func setupRoutes() *gin.Engine {
 		{
 			secured.GET("/ping", handlers.Ping)
 			secured.GET("/me", handlers.GetMe)
+			secured.PUT("/me", handlers.UpdateMe)
+			secured.PUT("/me/password", handlers.ChangeMyPassword)
 			secured.POST("/logout", handlers.Logout)
 			secured.POST("/apk", handlers.Apk)
 			secured.POST("/quizzes/:id/submit", handlers.SubmitQuiz)
@@ -86,6 +88,8 @@ func setupRoutes() *gin.Engine {
 				admin.POST("/quizzes", handlers.Quiz)
 				admin.PUT("/quizzes/:id", handlers.UpdateQuiz)
 				admin.DELETE("/quizzes/:id", handlers.DeleteQuiz)
+				admin.GET("/questions", handlers.GetQuestionsAdmin)
+				admin.GET("/questions/:id", handlers.GetQuestionByIDAdmin)
 				admin.POST("/questions", handlers.Question)
 				admin.PUT("/questions/:id", handlers.UpdateQuestion)
 				admin.DELETE("/questions/:id", handlers.DeleteQuestion)

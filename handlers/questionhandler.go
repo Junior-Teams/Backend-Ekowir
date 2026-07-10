@@ -146,6 +146,36 @@ func GetQuestionByID(context *gin.Context) {
 	context.JSON(http.StatusOK, toPublicQuestion(question))
 }
 
+// GetQuestionsAdmin/GetQuestionByIDAdmin are the admin-only counterparts of
+// GetQuestions/GetQuestionByID: they return the raw model including
+// AnswerOption.IsCorrect so the admin UI can show/edit which option is
+// correct. Only reachable through routes gated by RequireRole("admin").
+func GetQuestionsAdmin(context *gin.Context) {
+	var questions []models.Question
+	query := database.DB.Db.Preload("Options")
+
+	if idQuiz := context.Query("idQuiz"); idQuiz != "" {
+		query = query.Where("id_quiz = ?", idQuiz)
+	}
+
+	if err := query.Find(&questions).Error; err != nil {
+		utils.RespondServerError(context, err)
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{"data": questions})
+}
+
+func GetQuestionByIDAdmin(context *gin.Context) {
+	id := context.Param("id")
+	var question models.Question
+	if err := database.DB.Db.Preload("Options").First(&question, id).Error; err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": "Question not found"})
+		context.Abort()
+		return
+	}
+	context.JSON(http.StatusOK, question)
+}
+
 func UpdateQuestion(context *gin.Context) {
 	id := context.Param("id")
 	var question models.Question

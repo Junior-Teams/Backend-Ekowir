@@ -30,13 +30,13 @@ func Tier(context *gin.Context) {
 }
 
 func GetTiers(context *gin.Context) {
-	var tiers []models.Tier
+	tiers := []models.Tier{}
 	if err := database.DB.Db.Order("point asc").Find(&tiers).Error; err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		context.Abort()
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{"data": tiers})
+	context.JSON(http.StatusOK, gin.H{"data": tiers, "count": len(tiers)})
 }
 
 func GetTierByID(context *gin.Context) {
@@ -130,7 +130,10 @@ func GetLeaderboard(context *gin.Context) {
 	}
 
 	var users []models.User
-	if err := database.DB.Db.Preload("Tier").Order("xp desc").Limit(limit).Find(&users).Error; err != nil {
+	// Admins aren't participants in the gamification track, so they're
+	// excluded rather than just hidden client-side - that keeps ranks
+	// contiguous (1, 2, 3, ...) among real competitors.
+	if err := database.DB.Db.Preload("Tier").Where("role != ?", "admin").Order("xp desc").Limit(limit).Find(&users).Error; err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		context.Abort()
 		return
@@ -158,5 +161,5 @@ func GetLeaderboard(context *gin.Context) {
 			Tier:     u.Tier,
 		})
 	}
-	context.JSON(http.StatusOK, gin.H{"data": result})
+	context.JSON(http.StatusOK, gin.H{"data": result, "count": len(result)})
 }
