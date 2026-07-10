@@ -39,20 +39,20 @@ func GenerateJWT(email string, username string) (tokenString string, err error) 
 	return
 }
 
-func ValidateToken(signedToken string) (err error) {
+func ValidateToken(signedToken string) (claims *JWTClaim, err error) {
+	claims = &JWTClaim{}
 	token, err := jwt.ParseWithClaims(
 		signedToken,
-		&JWTClaim{},
+		claims,
 		func(token *jwt.Token) (interface{}, error) {
 			return jwtKey, nil
 		},
 	)
 	if err != nil {
-		return
+		return nil, err
 	}
 	if !token.Valid {
-		err = errors.New("invalid token")
-		return
+		return nil, errors.New("invalid token")
 	}
-	return
+	return claims, nil
 }

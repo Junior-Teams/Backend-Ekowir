@@ -14,12 +14,14 @@ func Auth() gin.HandlerFunc{
       return
     }
     tokenString = strings.TrimPrefix(tokenString, "Bearer ")
-    err:= auth.ValidateToken(tokenString)
+    claims, err := auth.ValidateToken(tokenString)
     if err != nil {
       context.JSON(401, gin.H{"error": err.Error()})
       context.Abort()
       return
     }
+    context.Set("email", claims.Email)
+    context.Set("username", claims.Username)
     context.Next()
   }
 }

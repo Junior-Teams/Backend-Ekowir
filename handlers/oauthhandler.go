@@ -73,11 +73,16 @@ func findOrCreateGoogleUser(info *auth.GoogleUserInfo) (*models.User, error) {
 
 	var user models.User
 	if err := db.Where("google_id = ?", info.ID).First(&user).Error; err == nil {
+		user.Picture = info.Picture
+		if err := db.Save(&user).Error; err != nil {
+			return nil, err
+		}
 		return &user, nil
 	}
 
 	if err := db.Where("email = ?", info.Email).First(&user).Error; err == nil {
 		user.GoogleID = &info.ID
+		user.Picture = info.Picture
 		if err := db.Save(&user).Error; err != nil {
 			return nil, err
 		}
@@ -89,6 +94,7 @@ func findOrCreateGoogleUser(info *auth.GoogleUserInfo) (*models.User, error) {
 		Name:     info.Name,
 		Username: username,
 		Email:    info.Email,
+		Picture:  info.Picture,
 		GoogleID: &info.ID,
 	}
 	if err := db.Create(&user).Error; err != nil {
