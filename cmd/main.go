@@ -43,6 +43,8 @@ func setupRoutes() *gin.Engine {
 		api.GET("/materis/:id", handlers.GetMateriByID)
 		api.GET("/quizzes", handlers.GetQuizzes)
 		api.GET("/quizzes/:id", handlers.GetQuizByID)
+		api.GET("/questions", handlers.GetQuestions)
+		api.GET("/questions/:id", handlers.GetQuestionByID)
 		secured := api.Group("/secured")
 		secured.Use(middlewares.Auth())
 		{
@@ -50,7 +52,6 @@ func setupRoutes() *gin.Engine {
 			secured.GET("/me", handlers.GetMe)
 			secured.POST("/logout", handlers.Logout)
 			secured.POST("/apk", handlers.Apk)
-			secured.PUT("/users/:id", handlers.UpdateUser)
 			secured.POST("/comments", handlers.Comment)
 			secured.PUT("/comments/:id", handlers.UpdateComment)
 			secured.DELETE("/comments/:id", handlers.DeleteComment)
@@ -60,6 +61,8 @@ func setupRoutes() *gin.Engine {
 			{
 				admin.GET("/users", handlers.GetUsers)
 				admin.GET("/users/:id", handlers.GetUserByID)
+				admin.POST("/users", handlers.CreateUser)
+				admin.PUT("/users/:id", handlers.UpdateUser)
 				admin.DELETE("/users/:id", handlers.DeleteUser)
 				admin.POST("/modules", handlers.Module)
 				admin.PUT("/modules/:id", handlers.UpdateModule)
@@ -70,6 +73,9 @@ func setupRoutes() *gin.Engine {
 				admin.POST("/quizzes", handlers.Quiz)
 				admin.PUT("/quizzes/:id", handlers.UpdateQuiz)
 				admin.DELETE("/quizzes/:id", handlers.DeleteQuiz)
+				admin.POST("/questions", handlers.Question)
+				admin.PUT("/questions/:id", handlers.UpdateQuestion)
+				admin.DELETE("/questions/:id", handlers.DeleteQuestion)
 			}
 		}
 	}

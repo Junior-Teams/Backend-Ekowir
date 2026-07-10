@@ -6,6 +6,7 @@ import (
 
 	"github.com/ALZEE23/ApiGo/database"
 	"github.com/ALZEE23/ApiGo/models"
+	"github.com/ALZEE23/ApiGo/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -43,8 +44,7 @@ func Module(context *gin.Context) {
 
 	record := database.DB.Db.Create(&module)
 	if record.Error != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": record.Error.Error()})
-		context.Abort()
+		utils.RespondDBError(context, record.Error, "Data tidak ditemukan")
 		return
 	}
 
@@ -54,8 +54,7 @@ func Module(context *gin.Context) {
 func GetModules(context *gin.Context) {
 	var modules []models.Module
 	if err := database.DB.Db.Find(&modules).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"data": modules})
@@ -87,8 +86,7 @@ func UpdateModule(context *gin.Context) {
 		DescriptionModule string `json:"description_module"`
 	}
 	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
 		return
 	}
 
@@ -103,8 +101,7 @@ func UpdateModule(context *gin.Context) {
 	}
 
 	if err := database.DB.Db.Save(&module).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondDBError(context, err, "Module tidak ditemukan")
 		return
 	}
 	context.JSON(http.StatusOK, module)
@@ -120,8 +117,7 @@ func DeleteModule(context *gin.Context) {
 	}
 
 	if err := database.DB.Db.Delete(&module).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"message": "Module deleted successfully"})

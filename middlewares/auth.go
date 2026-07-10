@@ -18,7 +18,7 @@ func Auth() gin.HandlerFunc{
     tokenString = strings.TrimPrefix(tokenString, "Bearer ")
     claims, err := auth.ValidateToken(tokenString)
     if err != nil {
-      context.JSON(401, gin.H{"error": err.Error()})
+      context.JSON(401, gin.H{"error": "Sesi Anda tidak valid atau telah berakhir, silahkan login kembali"})
       context.Abort()
       return
     }

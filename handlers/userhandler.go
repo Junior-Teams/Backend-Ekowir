@@ -5,6 +5,7 @@ import (
 
 	"github.com/ALZEE23/ApiGo/database"
 	"github.com/ALZEE23/ApiGo/models"
+	"github.com/ALZEE23/ApiGo/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,8 +17,7 @@ func RegisterUser(context *gin.Context) {
 		Password string `json:"password" binding:"required"`
 	}
 	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
 		return
 	}
 
@@ -27,17 +27,51 @@ func RegisterUser(context *gin.Context) {
 		Email:    input.Email,
 	}
 	if err := user.HashPassword(input.Password); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 	record := database.DB.Db.Create(&user)
 	if record.Error != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": record.Error.Error()})
-		context.Abort()
+		utils.RespondDBError(context, record.Error, "Data tidak ditemukan")
 		return
 	}
 	context.JSON(http.StatusCreated, gin.H{"userId": user.ID, "email": user.Email, "username": user.Username})
+}
+
+func CreateUser(context *gin.Context) {
+	var input struct {
+		Name     string `json:"name"`
+		Username string `json:"username" binding:"required"`
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required"`
+		Role     string `json:"role"`
+	}
+	if err := context.ShouldBindJSON(&input); err != nil {
+		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
+		return
+	}
+
+	role := input.Role
+	if role == "" {
+		role = "user"
+	}
+
+	user := models.User{
+		Name:     input.Name,
+		Username: input.Username,
+		Email:    input.Email,
+		Role:     role,
+	}
+	if err := user.HashPassword(input.Password); err != nil {
+		utils.RespondServerError(context, err)
+		return
+	}
+	record := database.DB.Db.Create(&user)
+	if record.Error != nil {
+		utils.RespondDBError(context, record.Error, "Data tidak ditemukan")
+		return
+	}
+	context.JSON(http.StatusCreated, gin.H{"userId": user.ID, "email": user.Email, "username": user.Username, "role": user.Role})
 }
 
 func GetMe(context *gin.Context) {
@@ -61,8 +95,7 @@ func GetMe(context *gin.Context) {
 func GetUsers(context *gin.Context) {
 	var users []models.User
 	if err := database.DB.Db.Find(&users).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, users)
@@ -89,16 +122,16 @@ func UpdateUser(context *gin.Context) {
 	}
 
 	var input struct {
-		Name     string `json:"name"`
-		Username string `json:"username"`
-		Email    string `json:"email"`
+		Name        string `json:"name"`
+		Username    string `json:"username"`
+		Email       string `json:"email"`
+		Role        string `json:"role"`
 		OldPassword string `json:"old_password"`
-		Password string `json:"password"`
+		Password    string `json:"password"`
 	}
 
 	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
 		return
 	}
 
@@ -112,8 +145,7 @@ func UpdateUser(context *gin.Context) {
 
 	if input.Password != "" {
 		if err := user.HashPassword(input.Password); err != nil {
-			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			context.Abort()
+			utils.RespondServerError(context, err)
 			return
 		}
 	}
@@ -127,10 +159,12 @@ func UpdateUser(context *gin.Context) {
 	if input.Email != "" {
 		user.Email = input.Email
 	}
+	if input.Role != "" {
+		user.Role = input.Role
+	}
 
 	if err := database.DB.Db.Save(&user).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondDBError(context, err, "Pengguna tidak ditemukan")
 		return
 	}
 
@@ -147,8 +181,7 @@ func DeleteUser(context *gin.Context) {
 	}
 
 	if err := database.DB.Db.Delete(&user).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/ALZEE23/ApiGo/database"
 	"github.com/ALZEE23/ApiGo/models"
+	"github.com/ALZEE23/ApiGo/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,8 +55,7 @@ func Comment(context *gin.Context) {
 
 	record := database.DB.Db.Create(&comment)
 	if record.Error != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": record.Error.Error()})
-		context.Abort()
+		utils.RespondDBError(context, record.Error, "Data tidak ditemukan")
 		return
 	}
 	context.JSON(http.StatusCreated, gin.H{"commentId": comment.ID, "content": comment.Content, "created_by": comment.CreatedBy, "image": comment.Image, "id_forum": comment.IDForum})
@@ -70,8 +70,7 @@ func GetComments(context *gin.Context) {
 	}
 
 	if err := query.Find(&comments).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"data": comments})
@@ -101,8 +100,7 @@ func UpdateComment(context *gin.Context) {
 		Content string `json:"content"`
 	}
 	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
 		return
 	}
 
@@ -111,8 +109,7 @@ func UpdateComment(context *gin.Context) {
 	}
 
 	if err := database.DB.Db.Save(&comment).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondDBError(context, err, "Comment tidak ditemukan")
 		return
 	}
 	context.JSON(http.StatusOK, comment)
@@ -128,8 +125,7 @@ func DeleteComment(context *gin.Context) {
 	}
 
 	if err := database.DB.Db.Delete(&comment).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"message": "Comment deleted successfully"})

@@ -1,13 +1,16 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/ALZEE23/ApiGo/auth"
 	"github.com/ALZEE23/ApiGo/database"
 	"github.com/ALZEE23/ApiGo/models"
+	"github.com/ALZEE23/ApiGo/utils"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type TokenRequest struct {
@@ -19,27 +22,29 @@ func GenerateToken(context *gin.Context) {
 	var request TokenRequest
 	var user models.User
 	if err := context.ShouldBindJSON(&request); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondValidationError(context, "Email dan password wajib diisi")
 		return
 	}
 
 	record := database.DB.Db.Where("email = ?", request.Email).First(&user)
 	if record.Error != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": record.Error.Error()})
-		context.Abort()
+		if errors.Is(record.Error, gorm.ErrRecordNotFound) {
+			context.JSON(http.StatusUnauthorized, gin.H{"error": "Email atau password salah"})
+			context.Abort()
+			return
+		}
+		utils.RespondServerError(context, record.Error)
 		return
 	}
 	credentialError := user.CheckPassword(request.Password)
 	if credentialError != nil {
-		context.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		context.JSON(http.StatusUnauthorized, gin.H{"error": "Email atau password salah"})
 		context.Abort()
 		return
 	}
 	tokenString, err := auth.GenerateJWT(user.Email, user.Username, user.Role)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"token": tokenString})
@@ -61,8 +66,7 @@ func Logout(context *gin.Context) {
 		ExpiresAt: exp,
 	}
 	if err := database.DB.Db.Create(&revoked).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 
