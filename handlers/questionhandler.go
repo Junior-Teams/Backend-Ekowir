@@ -5,6 +5,7 @@ import (
 
 	"github.com/ALZEE23/ApiGo/database"
 	"github.com/ALZEE23/ApiGo/models"
+	"github.com/ALZEE23/ApiGo/utils"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -38,14 +39,12 @@ func Question(context *gin.Context) {
 		Options      []optionInput `json:"options" binding:"required"`
 	}
 	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
 		return
 	}
 
 	if msg := validateOptions(input.Options); msg != "" {
-		context.JSON(http.StatusBadRequest, gin.H{"error": msg})
-		context.Abort()
+		utils.RespondValidationError(context, msg)
 		return
 	}
 
@@ -79,8 +78,7 @@ func Question(context *gin.Context) {
 		return nil
 	})
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondDBError(context, err, "Data tidak ditemukan")
 		return
 	}
 
@@ -126,8 +124,7 @@ func GetQuestions(context *gin.Context) {
 	}
 
 	if err := query.Find(&questions).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 
@@ -149,6 +146,36 @@ func GetQuestionByID(context *gin.Context) {
 	context.JSON(http.StatusOK, toPublicQuestion(question))
 }
 
+// GetQuestionsAdmin/GetQuestionByIDAdmin are the admin-only counterparts of
+// GetQuestions/GetQuestionByID: they return the raw model including
+// AnswerOption.IsCorrect so the admin UI can show/edit which option is
+// correct. Only reachable through routes gated by RequireRole("admin").
+func GetQuestionsAdmin(context *gin.Context) {
+	var questions []models.Question
+	query := database.DB.Db.Preload("Options")
+
+	if idQuiz := context.Query("idQuiz"); idQuiz != "" {
+		query = query.Where("id_quiz = ?", idQuiz)
+	}
+
+	if err := query.Find(&questions).Error; err != nil {
+		utils.RespondServerError(context, err)
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{"data": questions})
+}
+
+func GetQuestionByIDAdmin(context *gin.Context) {
+	id := context.Param("id")
+	var question models.Question
+	if err := database.DB.Db.Preload("Options").First(&question, id).Error; err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": "Question not found"})
+		context.Abort()
+		return
+	}
+	context.JSON(http.StatusOK, question)
+}
+
 func UpdateQuestion(context *gin.Context) {
 	id := context.Param("id")
 	var question models.Question
@@ -165,8 +192,7 @@ func UpdateQuestion(context *gin.Context) {
 		Options      []optionInput `json:"options"`
 	}
 	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
 		return
 	}
 
@@ -188,8 +214,7 @@ func UpdateQuestion(context *gin.Context) {
 
 	if input.Options != nil {
 		if msg := validateOptions(input.Options); msg != "" {
-			context.JSON(http.StatusBadRequest, gin.H{"error": msg})
-			context.Abort()
+			utils.RespondValidationError(context, msg)
 			return
 		}
 	}
@@ -216,8 +241,7 @@ func UpdateQuestion(context *gin.Context) {
 		return nil
 	})
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondDBError(context, err, "Question tidak ditemukan")
 		return
 	}
 
@@ -241,8 +265,7 @@ func DeleteQuestion(context *gin.Context) {
 		return tx.Delete(&question).Error
 	})
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"message": "Question deleted successfully"})

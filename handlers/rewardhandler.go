@@ -5,6 +5,7 @@ import (
 
 	"github.com/ALZEE23/ApiGo/database"
 	"github.com/ALZEE23/ApiGo/models"
+	"github.com/ALZEE23/ApiGo/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,28 +16,25 @@ func Reward(context *gin.Context) {
 		RequiredXp  int    `json:"required_xp" binding:"required"`
 	}
 	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
 		return
 	}
 
 	reward := models.Reward{Name: input.Name, Description: input.Description, RequiredXp: input.RequiredXp}
 	if err := database.DB.Db.Create(&reward).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondDBError(context, err, "Data tidak ditemukan")
 		return
 	}
 	context.JSON(http.StatusCreated, reward)
 }
 
 func GetRewards(context *gin.Context) {
-	var rewards []models.Reward
+	rewards := []models.Reward{}
 	if err := database.DB.Db.Order("required_xp asc").Find(&rewards).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{"data": rewards})
+	context.JSON(http.StatusOK, gin.H{"data": rewards, "count": len(rewards)})
 }
 
 func GetRewardByID(context *gin.Context) {
@@ -65,8 +63,7 @@ func UpdateReward(context *gin.Context) {
 		RequiredXp  int    `json:"required_xp"`
 	}
 	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
 		return
 	}
 
@@ -81,8 +78,7 @@ func UpdateReward(context *gin.Context) {
 	}
 
 	if err := database.DB.Db.Save(&reward).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondDBError(context, err, "Hadiah tidak ditemukan")
 		return
 	}
 	context.JSON(http.StatusOK, reward)
@@ -98,8 +94,7 @@ func DeleteReward(context *gin.Context) {
 	}
 
 	if err := database.DB.Db.Delete(&reward).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"message": "Reward deleted successfully"})
@@ -108,18 +103,14 @@ func DeleteReward(context *gin.Context) {
 // GetMyRewards lists every reward alongside whether the current user is
 // eligible for it (xp-wise) and whether they've already claimed it.
 func GetMyRewards(context *gin.Context) {
-	email := context.GetString("email")
-	var user models.User
-	if err := database.DB.Db.Where("email = ?", email).First(&user).Error; err != nil {
-		context.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		context.Abort()
+	user, ok := currentUser(context)
+	if !ok {
 		return
 	}
 
-	var rewards []models.Reward
+	rewards := []models.Reward{}
 	if err := database.DB.Db.Order("required_xp asc").Find(&rewards).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 
@@ -144,7 +135,7 @@ func GetMyRewards(context *gin.Context) {
 			Claimed:  claimed[r.ID],
 		})
 	}
-	context.JSON(http.StatusOK, gin.H{"data": result})
+	context.JSON(http.StatusOK, gin.H{"data": result, "count": len(result), "xp": user.Xp, "tier": user.Tier})
 }
 
 func ClaimReward(context *gin.Context) {
@@ -156,11 +147,8 @@ func ClaimReward(context *gin.Context) {
 		return
 	}
 
-	email := context.GetString("email")
-	var user models.User
-	if err := database.DB.Db.Where("email = ?", email).First(&user).Error; err != nil {
-		context.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		context.Abort()
+	user, ok := currentUser(context)
+	if !ok {
 		return
 	}
 

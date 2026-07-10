@@ -5,6 +5,7 @@ import (
 
 	"github.com/ALZEE23/ApiGo/database"
 	"github.com/ALZEE23/ApiGo/models"
+	"github.com/ALZEE23/ApiGo/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,8 +19,7 @@ func Quiz(context *gin.Context) {
 		BonusXp      int    `json:"bonus_xp"`
 	}
 	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
 		return
 	}
 
@@ -41,8 +41,7 @@ func Quiz(context *gin.Context) {
 
 	record := database.DB.Db.Create(&quiz)
 	if record.Error != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": record.Error.Error()})
-		context.Abort()
+		utils.RespondDBError(context, record.Error, "Data tidak ditemukan")
 		return
 	}
 	context.JSON(http.StatusCreated, quiz)
@@ -57,8 +56,7 @@ func GetQuizzes(context *gin.Context) {
 	}
 
 	if err := query.Find(&quizzes).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"data": quizzes})
@@ -93,8 +91,7 @@ func UpdateQuiz(context *gin.Context) {
 		BonusXp      int    `json:"bonus_xp"`
 	}
 	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
 		return
 	}
 
@@ -124,8 +121,7 @@ func UpdateQuiz(context *gin.Context) {
 	}
 
 	if err := database.DB.Db.Save(&quiz).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondDBError(context, err, "Quiz tidak ditemukan")
 		return
 	}
 	context.JSON(http.StatusOK, quiz)
@@ -141,8 +137,7 @@ func DeleteQuiz(context *gin.Context) {
 	}
 
 	if err := database.DB.Db.Delete(&quiz).Error; err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		context.Abort()
+		utils.RespondServerError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"message": "Quiz deleted successfully"})

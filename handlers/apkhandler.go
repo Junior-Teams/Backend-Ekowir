@@ -6,6 +6,7 @@ import (
 
 	"github.com/ALZEE23/ApiGo/database"
 	"github.com/ALZEE23/ApiGo/models"
+	"github.com/ALZEE23/ApiGo/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -51,8 +52,7 @@ func Apk(context *gin.Context) {
 
 	record := database.DB.Db.Create(&apk)
 	if record.Error != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": record.Error.Error()})
-		context.Abort()
+		utils.RespondDBError(context, record.Error, "Data tidak ditemukan")
 		return
 	}
 	context.JSON(http.StatusCreated, gin.H{"apkId": apk.ID, "name": apk.Name, "game": apk.Game, "cover": apk.Cover, "title": apk.Title, "description": apk.Description, "footage": apk.Footage, "creator": apk.Creator})
@@ -65,8 +65,7 @@ var retData struct {
 func GetApk(context *gin.Context) {
 	apks := database.DB.Db.Find(&retData.List)
 	if apks.Error != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": apks.Error.Error()})
-		context.Abort()
+		utils.RespondServerError(context, apks.Error)
 		return
 	}
 

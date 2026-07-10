@@ -2,3 +2,6 @@
 [build]
 # Just plain old shell command. You could use `make` as well.
 cmd = "go build -o ./tmp/main ./cmd/main.go"
+# storage/ receives uploaded files at runtime (module images, apk assets, etc.) -
+# without excluding it, every upload triggers a rebuild that kills the in-flight request.
+exclude_dir = ["tmp", "storage"]
