@@ -1,0 +1,58 @@
+package auth
+
+import (
+	"errors"
+	"log"
+	"os"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+var jwtKey = loadJWTKey()
+
+func loadJWTKey() []byte {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		log.Fatal("JWT_SECRET environment variable is not set")
+	}
+	return []byte(secret)
+}
+
+type JWTClaim struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	jwt.RegisteredClaims
+}
+
+func GenerateJWT(email string, username string) (tokenString string, err error) {
+	expirationTime := time.Now().Add(1 * time.Hour)
+	claims := &JWTClaim{
+		Email:    email,
+		Username: username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err = token.SignedString(jwtKey)
+	return
+}
+
+func ValidateToken(signedToken string) (err error) {
+	token, err := jwt.ParseWithClaims(
+		signedToken,
+		&JWTClaim{},
+		func(token *jwt.Token) (interface{}, error) {
+			return jwtKey, nil
+		},
+	)
+	if err != nil {
+		return
+	}
+	if !token.Valid {
+		err = errors.New("invalid token")
+		return
+	}
+	return
+}
