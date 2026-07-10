@@ -11,9 +11,11 @@ type User struct {
 	Username string  `json:"username" gorm:"unique"`
 	Email    string  `json:"email" gorm:"unique"`
 	Password string  `json:"-"`
-  Picture  string `json:"picture"`
+	Picture  string  `json:"picture"`
 	Xp       int     `json:"xp"`
 	Role     string  `json:"role" gorm:"type:VARCHAR(20);not null;default:'user'"`
+	IDTier   *uint   `json:"id_tier" gorm:"index"`
+	Tier     *Tier   `json:"tier,omitempty" gorm:"foreignKey:IDTier;references:ID"`
 	GoogleID *string `json:"-" gorm:"uniqueIndex"`
 }
 

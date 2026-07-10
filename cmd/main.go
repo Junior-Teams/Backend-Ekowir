@@ -45,6 +45,13 @@ func setupRoutes() *gin.Engine {
 		api.GET("/quizzes/:id", handlers.GetQuizByID)
 		api.GET("/questions", handlers.GetQuestions)
 		api.GET("/questions/:id", handlers.GetQuestionByID)
+		api.GET("/forums", handlers.GetForums)
+		api.GET("/forums/:id", handlers.GetForumByID)
+		api.GET("/tiers", handlers.GetTiers)
+		api.GET("/tiers/:id", handlers.GetTierByID)
+		api.GET("/leaderboard", handlers.GetLeaderboard)
+		api.GET("/rewards", handlers.GetRewards)
+		api.GET("/rewards/:id", handlers.GetRewardByID)
 		secured := api.Group("/secured")
 		secured.Use(middlewares.Auth())
 		{
@@ -52,9 +59,15 @@ func setupRoutes() *gin.Engine {
 			secured.GET("/me", handlers.GetMe)
 			secured.POST("/logout", handlers.Logout)
 			secured.POST("/apk", handlers.Apk)
+			secured.POST("/quizzes/:id/submit", handlers.SubmitQuiz)
+			secured.GET("/rewards", handlers.GetMyRewards)
+			secured.POST("/rewards/:id/claim", handlers.ClaimReward)
 			secured.POST("/comments", handlers.Comment)
 			secured.PUT("/comments/:id", handlers.UpdateComment)
 			secured.DELETE("/comments/:id", handlers.DeleteComment)
+			secured.POST("/forums", handlers.Forum)
+			secured.PUT("/forums/:id", handlers.UpdateForum)
+			secured.DELETE("/forums/:id", handlers.DeleteForum)
 
 			admin := secured.Group("/")
 			admin.Use(middlewares.RequireRole("admin"))
@@ -76,6 +89,12 @@ func setupRoutes() *gin.Engine {
 				admin.POST("/questions", handlers.Question)
 				admin.PUT("/questions/:id", handlers.UpdateQuestion)
 				admin.DELETE("/questions/:id", handlers.DeleteQuestion)
+				admin.POST("/tiers", handlers.Tier)
+				admin.PUT("/tiers/:id", handlers.UpdateTier)
+				admin.DELETE("/tiers/:id", handlers.DeleteTier)
+				admin.POST("/rewards", handlers.Reward)
+				admin.PUT("/rewards/:id", handlers.UpdateReward)
+				admin.DELETE("/rewards/:id", handlers.DeleteReward)
 			}
 		}
 	}

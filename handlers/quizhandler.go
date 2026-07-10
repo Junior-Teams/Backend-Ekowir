@@ -11,10 +11,12 @@ import (
 
 func Quiz(context *gin.Context) {
 	var input struct {
-		Title       string `json:"title" binding:"required"`
-		Description string `json:"description" binding:"required"`
-		CreatedBy   string `json:"created_by" binding:"required"`
-		IDModule    uint   `json:"id_module" binding:"required"`
+		Title        string `json:"title" binding:"required"`
+		Description  string `json:"description" binding:"required"`
+		CreatedBy    string `json:"created_by" binding:"required"`
+		IDModule     uint   `json:"id_module" binding:"required"`
+		PassingScore int    `json:"passing_score" binding:"required"`
+		BonusXp      int    `json:"bonus_xp"`
 	}
 	if err := context.ShouldBindJSON(&input); err != nil {
 		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
@@ -29,10 +31,12 @@ func Quiz(context *gin.Context) {
 	}
 
 	quiz := models.Quiz{
-		Title:       input.Title,
-		Description: input.Description,
-		CreatedBy:   input.CreatedBy,
-		IDModule:    input.IDModule,
+		Title:        input.Title,
+		Description:  input.Description,
+		CreatedBy:    input.CreatedBy,
+		IDModule:     input.IDModule,
+		PassingScore: input.PassingScore,
+		BonusXp:      input.BonusXp,
 	}
 
 	record := database.DB.Db.Create(&quiz)
@@ -40,7 +44,7 @@ func Quiz(context *gin.Context) {
 		utils.RespondDBError(context, record.Error, "Data tidak ditemukan")
 		return
 	}
-	context.JSON(http.StatusCreated, gin.H{"quizId": quiz.ID, "title": quiz.Title, "description": quiz.Description, "created_by": quiz.CreatedBy, "id_module": quiz.IDModule})
+	context.JSON(http.StatusCreated, quiz)
 }
 
 func GetQuizzes(context *gin.Context) {
@@ -79,10 +83,12 @@ func UpdateQuiz(context *gin.Context) {
 	}
 
 	var input struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		CreatedBy   string `json:"created_by"`
-		IDModule    uint   `json:"id_module"`
+		Title        string `json:"title"`
+		Description  string `json:"description"`
+		CreatedBy    string `json:"created_by"`
+		IDModule     uint   `json:"id_module"`
+		PassingScore int    `json:"passing_score"`
+		BonusXp      int    `json:"bonus_xp"`
 	}
 	if err := context.ShouldBindJSON(&input); err != nil {
 		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
@@ -106,6 +112,12 @@ func UpdateQuiz(context *gin.Context) {
 	}
 	if input.CreatedBy != "" {
 		quiz.CreatedBy = input.CreatedBy
+	}
+	if input.PassingScore != 0 {
+		quiz.PassingScore = input.PassingScore
+	}
+	if input.BonusXp != 0 {
+		quiz.BonusXp = input.BonusXp
 	}
 
 	if err := database.DB.Db.Save(&quiz).Error; err != nil {
