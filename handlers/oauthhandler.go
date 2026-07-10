@@ -58,7 +58,7 @@ func GoogleCallback(context *gin.Context) {
 		return
 	}
 
-	tokenString, err := auth.GenerateJWT(user.Email, user.Username)
+	tokenString, err := auth.GenerateJWT(user.Email, user.Username, user.Role)
 	if err != nil {
 		redirectWithError("token_generation_failed")
 		return

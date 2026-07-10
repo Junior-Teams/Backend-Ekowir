@@ -22,10 +22,11 @@ func loadJWTKey() []byte {
 type JWTClaim struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(email string, username string) (tokenString string, err error) {
+func GenerateJWT(email string, username string, role string) (tokenString string, err error) {
 	jti, err := GenerateOAuthState()
 	if err != nil {
 		return "", err
@@ -35,6 +36,7 @@ func GenerateJWT(email string, username string) (tokenString string, err error) 
 	claims := &JWTClaim{
 		Email:    email,
 		Username: username,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        jti,
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
