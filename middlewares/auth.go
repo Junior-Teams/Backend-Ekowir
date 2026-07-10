@@ -3,6 +3,8 @@ import (
   "strings"
 
   "github.com/ALZEE23/ApiGo/auth"
+  "github.com/ALZEE23/ApiGo/database"
+  "github.com/ALZEE23/ApiGo/models"
   "github.com/gin-gonic/gin"
 )
 func Auth() gin.HandlerFunc{
@@ -20,8 +22,18 @@ func Auth() gin.HandlerFunc{
       context.Abort()
       return
     }
+
+    var revoked models.RevokedToken
+    if err := database.DB.Db.Where("jti = ?", claims.ID).First(&revoked).Error; err == nil {
+      context.JSON(401, gin.H{"error": "token has been revoked"})
+      context.Abort()
+      return
+    }
+
     context.Set("email", claims.Email)
     context.Set("username", claims.Username)
+    context.Set("jti", claims.ID)
+    context.Set("exp", claims.ExpiresAt.Time)
     context.Next()
   }
 }
