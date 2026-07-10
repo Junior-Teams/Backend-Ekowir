@@ -89,11 +89,11 @@ func UpdateUser(context *gin.Context) {
 	}
 
 	var input struct {
-		Name     string `json:"name"`
-		Username string `json:"username"`
-		Email    string `json:"email"`
+		Name        string `json:"name"`
+		Username    string `json:"username"`
+		Email       string `json:"email"`
 		OldPassword string `json:"old_password"`
-		Password string `json:"password"`
+		Password    string `json:"password"`
 	}
 
 	if err := context.ShouldBindJSON(&input); err != nil {

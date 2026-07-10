@@ -1,14 +1,14 @@
 package handlers
 
 import (
-  "net/http"
-  "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func Ping(context *gin.Context) {
-  context.JSON(http.StatusOK, gin.H{"message": "pong"})
+	context.JSON(http.StatusOK, gin.H{"message": "pong"})
 }
 
 func Test(context *gin.Context) {
-  context.JSON(http.StatusOK, gin.H{"message": "test"})
+	context.JSON(http.StatusOK, gin.H{"message": "test"})
 }
