@@ -32,8 +32,23 @@ func Auth() gin.HandlerFunc{
 
     context.Set("email", claims.Email)
     context.Set("username", claims.Username)
+    context.Set("role", claims.Role)
     context.Set("jti", claims.ID)
     context.Set("exp", claims.ExpiresAt.Time)
     context.Next()
+  }
+}
+
+func RequireRole(roles ...string) gin.HandlerFunc {
+  return func(context *gin.Context) {
+    role := context.GetString("role")
+    for _, allowed := range roles {
+      if role == allowed {
+        context.Next()
+        return
+      }
+    }
+    context.JSON(403, gin.H{"error": "insufficient permissions"})
+    context.Abort()
   }
 }

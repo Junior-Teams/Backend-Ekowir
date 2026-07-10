@@ -54,6 +54,7 @@ func GetMe(context *gin.Context) {
 		"username": user.Username,
 		"email":    user.Email,
 		"picture":  user.Picture,
+		"role":     user.Role,
 	})
 }
 

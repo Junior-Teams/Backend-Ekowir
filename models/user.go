@@ -13,6 +13,7 @@ type User struct {
 	Password string  `json:"-"`
   Picture  string `json:"picture"`
 	Xp       int     `json:"xp"`
+	Role     string  `json:"role" gorm:"type:VARCHAR(20);not null;default:'user'"`
 	GoogleID *string `json:"-" gorm:"uniqueIndex"`
 }
 
