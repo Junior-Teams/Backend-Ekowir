@@ -43,7 +43,9 @@ func Materi(context *gin.Context) {
 
 func GetMateris(context *gin.Context) {
 	var materis []models.Materi
-	query := database.DB.Db.Preload("Module")
+	// Stable authoring order: the course viewer's sidebar and Prev/Next
+	// navigation depend on this being deterministic.
+	query := database.DB.Db.Preload("Module").Order("created_at asc, id asc")
 
 	if idModule := context.Query("idModule"); idModule != "" {
 		query = query.Where("id_module = ?", idModule)

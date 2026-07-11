@@ -133,7 +133,9 @@ func GetLeaderboard(context *gin.Context) {
 	// Admins aren't participants in the gamification track, so they're
 	// excluded rather than just hidden client-side - that keeps ranks
 	// contiguous (1, 2, 3, ...) among real competitors.
-	if err := database.DB.Db.Preload("Tier").Where("role != ?", "admin").Order("xp desc").Limit(limit).Find(&users).Error; err != nil {
+	// NULLS LAST guards against legacy rows where xp was added after the row
+	// existed (Postgres sorts NULLs first on DESC); id asc keeps ties stable.
+	if err := database.DB.Db.Preload("Tier").Where("role != ?", "admin").Order("xp desc NULLS LAST, id asc").Limit(limit).Find(&users).Error; err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		context.Abort()
 		return

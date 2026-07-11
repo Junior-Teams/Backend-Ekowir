@@ -44,7 +44,7 @@ func ConnectDb() {
 	db.Logger = logger.Default.LogMode(logger.Info)
 
 	log.Println("running migrations")
-	db.AutoMigrate(&models.User{}, &models.Apk{}, &models.Forum{}, &models.Comment{}, &models.Module{}, &models.Materi{}, &models.Quiz{}, &models.QuizCompletion{}, &models.Question{}, &models.AnswerOption{}, &models.Tier{}, &models.RevokedToken{}, &models.Reward{}, &models.RewardClaim{})
+	db.AutoMigrate(&models.User{}, &models.Apk{}, &models.Forum{}, &models.Comment{}, &models.Module{}, &models.Materi{}, &models.MateriCompletion{}, &models.Quiz{}, &models.QuizCompletion{}, &models.Question{}, &models.AnswerOption{}, &models.Tier{}, &models.RevokedToken{}, &models.Reward{}, &models.RewardClaim{})
 
 	DB = Dbinstance{
 		Db: db,

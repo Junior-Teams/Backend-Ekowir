@@ -49,7 +49,7 @@ func Quiz(context *gin.Context) {
 
 func GetQuizzes(context *gin.Context) {
 	var quizzes []models.Quiz
-	query := database.DB.Db.Preload("Module")
+	query := database.DB.Db.Preload("Module").Order("created_at asc, id asc")
 
 	if idModule := context.Query("idModule"); idModule != "" {
 		query = query.Where("id_module = ?", idModule)
