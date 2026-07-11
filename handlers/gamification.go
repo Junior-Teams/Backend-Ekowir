@@ -72,7 +72,10 @@ func awardXp(userID uint, xp int) (gamificationResult, error) {
 
 	if xp > 0 {
 		err := database.DB.Db.Transaction(func(tx *gorm.DB) error {
-			return tx.Model(&user).UpdateColumn("xp", gorm.Expr("xp + ?", xp)).Error
+			// COALESCE: legacy rows created before the xp column existed hold
+			// NULL, and NULL + n stays NULL - which would silently swallow
+			// every payout for those users.
+			return tx.Model(&user).UpdateColumn("xp", gorm.Expr("COALESCE(xp, 0) + ?", xp)).Error
 		})
 		if err != nil {
 			return gamificationResult{}, err

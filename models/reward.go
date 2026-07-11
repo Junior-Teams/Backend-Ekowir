@@ -8,6 +8,7 @@ type Reward struct {
 	gorm.Model
 	Name        string `json:"name" gorm:"type:VARCHAR(50);not null"`
 	Description string `json:"description" gorm:"type:VARCHAR(255)"`
+	Image       string `json:"image" form:"image" gorm:"type:VARCHAR(255);null;default:null"`
 	RequiredXp  int    `json:"required_xp" gorm:"not null"`
 }
 

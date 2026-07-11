@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"path/filepath"
+	"strconv"
 
 	"github.com/ALZEE23/ApiGo/database"
 	"github.com/ALZEE23/ApiGo/models"
@@ -9,18 +11,37 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Reward(context *gin.Context) {
-	var input struct {
-		Name        string `json:"name" binding:"required"`
-		Description string `json:"description"`
-		RequiredXp  int    `json:"required_xp" binding:"required"`
+// saveRewardImage stores the optional "image" form file and returns its
+// storage path. An empty path with ok=true means no image was uploaded.
+func saveRewardImage(context *gin.Context) (path string, ok bool) {
+	imageHeader, err := context.FormFile("image")
+	if err != nil {
+		return "", true
 	}
-	if err := context.ShouldBindJSON(&input); err != nil {
+	imagePath := filepath.Join("storage", imageHeader.Filename)
+	if err := context.SaveUploadedFile(imageHeader, imagePath); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image file"})
+		context.Abort()
+		return "", false
+	}
+	return imagePath, true
+}
+
+func Reward(context *gin.Context) {
+	name := context.PostForm("name")
+	description := context.PostForm("description")
+	requiredXp, err := strconv.Atoi(context.PostForm("required_xp"))
+	if name == "" || err != nil || requiredXp <= 0 {
 		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
 		return
 	}
 
-	reward := models.Reward{Name: input.Name, Description: input.Description, RequiredXp: input.RequiredXp}
+	imagePath, ok := saveRewardImage(context)
+	if !ok {
+		return
+	}
+
+	reward := models.Reward{Name: name, Description: description, Image: imagePath, RequiredXp: requiredXp}
 	if err := database.DB.Db.Create(&reward).Error; err != nil {
 		utils.RespondDBError(context, err, "Data tidak ditemukan")
 		return
@@ -57,24 +78,24 @@ func UpdateReward(context *gin.Context) {
 		return
 	}
 
-	var input struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		RequiredXp  int    `json:"required_xp"`
+	if name := context.PostForm("name"); name != "" {
+		reward.Name = name
 	}
-	if err := context.ShouldBindJSON(&input); err != nil {
-		utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
+	if description := context.PostForm("description"); description != "" {
+		reward.Description = description
+	}
+	if rawXp := context.PostForm("required_xp"); rawXp != "" {
+		requiredXp, err := strconv.Atoi(rawXp)
+		if err != nil || requiredXp <= 0 {
+			utils.RespondValidationError(context, "Data yang Anda masukkan tidak valid, mohon periksa kembali")
+			return
+		}
+		reward.RequiredXp = requiredXp
+	}
+	if imagePath, ok := saveRewardImage(context); !ok {
 		return
-	}
-
-	if input.Name != "" {
-		reward.Name = input.Name
-	}
-	if input.Description != "" {
-		reward.Description = input.Description
-	}
-	if input.RequiredXp != 0 {
-		reward.RequiredXp = input.RequiredXp
+	} else if imagePath != "" {
+		reward.Image = imagePath
 	}
 
 	if err := database.DB.Db.Save(&reward).Error; err != nil {

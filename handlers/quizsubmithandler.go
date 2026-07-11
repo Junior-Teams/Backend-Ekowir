@@ -18,6 +18,26 @@ func SubmitQuiz(context *gin.Context) {
 		return
 	}
 
+	user, ok := currentUser(context)
+	if !ok {
+		return
+	}
+
+	// The quiz is the module's wrap-up: it can only be submitted once every
+	// materi in the module has been completed. Enforced here (not just in the
+	// UI) so XP can't be farmed by calling the endpoint directly.
+	materiIDs, completedIDs, err := moduleMateriProgress(quiz.IDModule, user.ID)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		context.Abort()
+		return
+	}
+	if len(completedIDs) < len(materiIDs) {
+		context.JSON(http.StatusForbidden, gin.H{"error": "Selesaikan semua materi terlebih dahulu"})
+		context.Abort()
+		return
+	}
+
 	var input struct {
 		Answers []struct {
 			QuestionID uint `json:"question_id" binding:"required"`
@@ -82,15 +102,8 @@ func SubmitQuiz(context *gin.Context) {
 		return
 	}
 
-	email := context.GetString("email")
-	var user models.User
-	if err := database.DB.Db.Where("email = ?", email).First(&user).Error; err != nil {
-		context.JSON(http.StatusOK, response)
-		return
-	}
-
 	var existing models.QuizCompletion
-	err := database.DB.Db.Where("user_id = ? AND id_quiz = ?", user.ID, quiz.ID).First(&existing).Error
+	err = database.DB.Db.Where("user_id = ? AND id_quiz = ?", user.ID, quiz.ID).First(&existing).Error
 	if err == nil {
 		response["already_completed"] = true
 		context.JSON(http.StatusOK, response)
@@ -104,7 +117,8 @@ func SubmitQuiz(context *gin.Context) {
 		if err := tx.Create(&completion).Error; err != nil {
 			return err
 		}
-		return tx.Model(&user).UpdateColumn("xp", gorm.Expr("xp + ?", xpEarned)).Error
+		// COALESCE guards legacy rows whose xp is NULL (NULL + n = NULL)
+		return tx.Model(&user).UpdateColumn("xp", gorm.Expr("COALESCE(xp, 0) + ?", xpEarned)).Error
 	})
 	if txErr != nil {
 		// most likely a duplicate completion from a concurrent request; the

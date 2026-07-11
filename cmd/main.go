@@ -62,6 +62,10 @@ func setupRoutes() *gin.Engine {
 			secured.POST("/logout", handlers.Logout)
 			secured.POST("/apk", handlers.Apk)
 			secured.POST("/quizzes/:id/submit", handlers.SubmitQuiz)
+			secured.POST("/materis/:id/complete", handlers.CompleteMateri)
+			secured.GET("/modules/:id/progress", handlers.GetModuleProgress)
+			secured.GET("/me/courses", handlers.GetMyCourseHistory)
+			secured.GET("/me/activity", handlers.GetMyActivity)
 			secured.GET("/rewards", handlers.GetMyRewards)
 			secured.POST("/rewards/:id/claim", handlers.ClaimReward)
 			secured.POST("/comments", handlers.Comment)
@@ -74,6 +78,7 @@ func setupRoutes() *gin.Engine {
 			admin := secured.Group("/")
 			admin.Use(middlewares.RequireRole("admin"))
 			{
+				admin.GET("/dashboard", handlers.GetAdminDashboard)
 				admin.GET("/users", handlers.GetUsers)
 				admin.GET("/users/:id", handlers.GetUserByID)
 				admin.POST("/users", handlers.CreateUser)
