@@ -1,6 +1,6 @@
 # ApiGo
 
-REST API sederhana untuk mengelola data **User** (auth berbasis JWT) dan **Apk** (entri game/aplikasi dengan upload file), dibangun dengan Go, [Gin](https://github.com/gin-gonic/gin), dan [GORM](https://gorm.io/) + PostgreSQL.
+REST API untuk data gamification Koperasi KDKMP dibangun dengan Go, [Gin](https://github.com/gin-gonic/gin), dan [GORM](https://gorm.io/) + PostgreSQL.
 
 ## Alur Aplikasi (Flowchart)
 
